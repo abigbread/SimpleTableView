@@ -20,11 +20,11 @@ public class MainActivity extends AppCompatActivity {
         initData();
         LinearLayout container = findViewById(R.id.container);
 
-        SimpleTableView tableView = new SimpleTableView.Builder(this, container, mTableData)
-                .useDefaultOptions()
-                .create();
-        //更新数据
-        tableView.setData(mTableData2);
+//        SimpleTableView tableView = new SimpleTableView.Builder(this, container, mTableData)
+//                .useDefaultOptions()
+//                .create();
+//        //更新数据
+//        tableView.setData(mTableData2);
 
     }
 

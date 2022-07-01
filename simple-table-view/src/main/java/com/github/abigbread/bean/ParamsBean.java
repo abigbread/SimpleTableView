@@ -1,4 +1,4 @@
-package com.abigbread.simpletableview.bean;
+package com.github.abigbread.bean;
 
 import java.util.ArrayList;
 

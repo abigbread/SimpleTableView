@@ -1,4 +1,4 @@
-package com.abigbread.simpletableview.adapter;
+package com.github.abigbread.adapter;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -15,12 +15,12 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.abigbread.simpletableview.DisplayUtil;
-import com.abigbread.simpletableview.R;
-import com.abigbread.simpletableview.bean.ParamsBean;
-import com.abigbread.simpletableview.callback.OnItemClickListener;
-import com.abigbread.simpletableview.callback.OnItemLongClickListener;
-import com.abigbread.simpletableview.callback.OnItemSelectedListener;
+import com.github.abigbread.DisplayUtil;
+import com.github.abigbread.R;
+import com.github.abigbread.bean.ParamsBean;
+import com.github.abigbread.callback.OnItemClickListener;
+import com.github.abigbread.callback.OnItemLongClickListener;
+import com.github.abigbread.callback.OnItemSelectedListener;
 
 import java.util.ArrayList;
 import java.util.List;

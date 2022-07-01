@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical">
+
+    <!--锁定第一列，锁定第一行的表头-->
+    <LinearLayout
+        android:id="@+id/ll_lock_column_head"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/head_bg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tv_lock_column_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/head_text_color"
+            tools:text="第一" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="@color/white" />
+
+        <HorizontalScrollView
+            android:id="@+id/hsv_lock_column_head"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbars="none">
+
+        </HorizontalScrollView>
+    </LinearLayout>
+    <!--不锁定第一列，锁定第一行的表头-->
+    <LinearLayout
+        android:id="@+id/ll_unlock_column_head"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/head_bg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <HorizontalScrollView
+            android:id="@+id/hsv_unlock_column_head"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbars="none">
+
+        </HorizontalScrollView>
+    </LinearLayout>
+
+    <!--表格主体部分-->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_table_main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    </androidx.recyclerview.widget.RecyclerView>
+</LinearLayout>

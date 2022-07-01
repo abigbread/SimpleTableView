@@ -1,4 +1,4 @@
-package com.abigbread.simpletableview.callback;
+package com.github.abigbread.callback;
 
 import android.widget.HorizontalScrollView;
 

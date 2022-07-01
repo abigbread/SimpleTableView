@@ -1,4 +1,4 @@
-package com.abigbread.simpletableview;
+package com.github.abigbread;
 
 import android.content.Context;
 import android.text.Layout;
@@ -18,12 +18,12 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.abigbread.simpletableview.adapter.TableViewAdapter;
-import com.abigbread.simpletableview.bean.ParamsBean;
-import com.abigbread.simpletableview.callback.OnItemClickListener;
-import com.abigbread.simpletableview.callback.OnItemLongClickListener;
-import com.abigbread.simpletableview.callback.OnTableViewCreatedListener;
-import com.abigbread.simpletableview.callback.OnTableViewListener;
+import com.github.abigbread.adapter.TableViewAdapter;
+import com.github.abigbread.bean.ParamsBean;
+import com.github.abigbread.callback.OnItemClickListener;
+import com.github.abigbread.callback.OnItemLongClickListener;
+import com.github.abigbread.callback.OnTableViewCreatedListener;
+import com.github.abigbread.callback.OnTableViewListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;

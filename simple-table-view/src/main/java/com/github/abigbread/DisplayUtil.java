@@ -1,4 +1,4 @@
-package com.abigbread.simpletableview;
+package com.github.abigbread;
 
 import android.content.Context;
 
