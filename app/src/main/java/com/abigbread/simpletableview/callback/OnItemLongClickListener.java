@@ -1,4 +1,4 @@
-package com.abigbread.simpletableview;
+package com.abigbread.simpletableview.callback;
 
 import android.view.View;
 
@@ -9,7 +9,7 @@ import android.view.View;
  * 简述：<item 长按事件>
  */
 
-interface OnItemLongClickListener {
+public interface OnItemLongClickListener {
     /**
      * @param item     点击项
      * @param position 点击位置

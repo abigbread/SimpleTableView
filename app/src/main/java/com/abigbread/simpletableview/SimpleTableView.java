@@ -10,11 +10,24 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.abigbread.simpletableview.adapter.TableViewAdapter;
+import com.abigbread.simpletableview.bean.ParamsBean;
+import com.abigbread.simpletableview.callback.OnItemClickListener;
+import com.abigbread.simpletableview.callback.OnItemLongClickListener;
+import com.abigbread.simpletableview.callback.OnTableViewCreatedListener;
+import com.abigbread.simpletableview.callback.OnTableViewListener;
+
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * @author abigbread
@@ -26,12 +39,16 @@ import java.util.HashMap;
 public class SimpleTableView {
 
 
+    private static TableViewAdapter tableViewAdapter;
     private final boolean isLockFirstRow;
     private final boolean isLockFirstColumn;
+    Builder builder;
 
     private SimpleTableView(Builder builder) {
         this.isLockFirstRow = builder.isLockFirstRow;
         this.isLockFirstColumn = builder.isLockFirstColumn;
+        this.builder = builder;
+
     }
 
     /**
@@ -52,7 +69,17 @@ public class SimpleTableView {
         return isLockFirstColumn;
     }
 
+    /**
+     * 设置数据
+     *
+     * @param data 未处理的表格数据
+     */
+    public void setData(ArrayList<ArrayList<String>> data) {
+        builder.setTableData(data);
+    }
+
     public static class Builder {
+
         private final String TAG = SimpleTableView.class.getSimpleName();
 
         /**
@@ -72,6 +99,40 @@ public class SimpleTableView {
          * 表格视图
          */
         private View tableView;
+
+
+        //表格视图相关 start --->>>
+
+        /**
+         * 表格左上角视图（第一行第一列交叉的那一格）
+         */
+        private TextView lockColumnHeadTitle;
+        /**
+         * 第一行布局（锁定第一列）
+         */
+        private LinearLayout lockColumnHeadLl;
+        /**
+         * 第一行布局（未锁定第一列）
+         */
+        private LinearLayout unLockColumnHeadLl;
+        /**
+         * 第一行滚动视图（锁定第一列）
+         */
+        private HorizontalScrollView lockColumnHeadHsv;
+        /**
+         * 第一行滚动视图（未锁定第一列）
+         */
+        private HorizontalScrollView unLockColumnHeadHsv;
+        /**
+         * 表格主视图
+         */
+        private RecyclerView tableMainRv;
+        /**
+         * 表格主视图适配器
+         */
+        private TableViewAdapter tableViewAdapter;
+
+        //表格视图相关 <<< --- end
 
 
         //表格数据相关 start --->>>
@@ -112,8 +173,13 @@ public class SimpleTableView {
          * 记录每行最大高度
          */
         private ArrayList<Integer> rowMaxHeights = new ArrayList<Integer>();
+        /**
+         * 把所有的滚动视图放图列表，后面实现联动效果
+         */
+        private ArrayList<HorizontalScrollView> mScrollViews = new ArrayList<HorizontalScrollView>();
 
-        //表格数据相关 <<<--- end
+        //表格数据相关 <<< --- end
+
 
         //相关参数设置 start --->>>
 
@@ -177,6 +243,10 @@ public class SimpleTableView {
         private int cellPadding;
 
         /**
+         * item 选中效果
+         */
+        private boolean itemSelectedStatus;
+        /**
          * Item 点击事件
          */
         private OnItemClickListener onItemClickListener;
@@ -186,12 +256,21 @@ public class SimpleTableView {
         private OnItemLongClickListener onItemLongClickListener;
 
         /**
+         * 表格横向滚动监听事件
+         */
+        private OnTableViewListener tableViewListener;
+
+        /**
          * 要改变的列集合
          */
         private HashMap<Integer, Integer> changeColumns = new HashMap<>();
 
 
-        //相关参数设置 <<<--- end
+        /**
+         * Item选中样式
+         */
+        private int itemSelectedColor;
+        //相关参数设置 <<< --- end
 
         /**
          * @param context       上下文
@@ -346,18 +425,10 @@ public class SimpleTableView {
         }
 
         /**
-         * 设置 item 点击事件监听
+         * @param itemSelectedStatus true 则item有选中效果
          */
-        public Builder setOnItemClickListener(OnItemClickListener onItemClickListener) {
-            this.onItemClickListener = onItemClickListener;
-            return this;
-        }
-
-        /**
-         * 设置 item 长按事件监听
-         */
-        public Builder setOnItemLongClickListener(OnItemLongClickListener onItemLongClickListener) {
-            this.onItemLongClickListener = onItemLongClickListener;
+        public Builder setItemSelectedStatus(boolean itemSelectedStatus) {
+            this.itemSelectedStatus = itemSelectedStatus;
             return this;
         }
 
@@ -376,6 +447,80 @@ public class SimpleTableView {
             return this;
         }
 
+        /**
+         * 使用默认的配置
+         */
+        public Builder useDefaultOptions() {
+            this.setLockFirstColumn(true) //是否锁定第一列
+                    .setLockFirstRow(true) //是否锁定第一行
+                    .setMaxColumnWidth(100) //列最大宽度
+                    .setMinColumnWidth(60) //列最小宽度
+                    .setMinRowHeight(20)//行最小高度
+                    .setMaxRowHeight(60)//行最大高度
+                    .setTextSize(16) //单元格字体大小
+                    .setCellPadding(15)//设置单元格内边距(dp)
+                    .setEmptyString("N/A")
+                    .setItemSelectedStatus(true)//设置item选中效果是否开启
+                    .setItemSelectedColor(R.color.selected_bg)//设置item选中颜色
+                    .setContentTextColor(R.color.white)
+                    .setFirstRowBgColor(R.color.head_bg)//表头背景色
+                    .setHeadTextColor(R.color.head_text_color)//表头字体颜色
+                    .setContentTextColor(R.color.content_text_color);//单元格字体颜色;//空值替换值
+            return this;
+        }
+
+        /**
+         * 选中item的颜色
+         *
+         * @param itemSelected 资源id
+         */
+        public Builder setItemSelectedColor(int itemSelected) {
+            this.itemSelectedColor = itemSelected;
+            return this;
+        }
+
+        /**
+         * 设置横向滚动监听
+         */
+        public Builder setTableViewListener(OnTableViewListener tableViewListener) {
+            this.tableViewListener = tableViewListener;
+            return this;
+        }
+
+        /**
+         * 设置 item 点击事件监听
+         */
+        public Builder setOnItemClickListener(OnItemClickListener onItemClickListener) {
+            this.onItemClickListener = onItemClickListener;
+            return this;
+        }
+
+        /**
+         * 设置 item 长按事件监听
+         */
+        public Builder setOnItemLongClickListener(OnItemLongClickListener onItemLongClickListener) {
+            this.onItemLongClickListener = onItemLongClickListener;
+            return this;
+        }
+
+        /**
+         * 数据刷新时，重新设值
+         *
+         * @param data 未处理的原始表格数据
+         */
+        public void setTableData(ArrayList<ArrayList<String>> data) {
+            this.data.clear();
+            this.data.addAll(data);
+            tableFirstRowData.clear();
+            tableFirstColumnData.clear();
+            tableRowData.clear();
+            columnMaxWidths.clear();
+            rowMaxHeights.clear();
+            initData();
+            updateFirstRow();
+            tableViewAdapter.notifyDataSetChanged();
+        }
+
 
         public SimpleTableView create() {
             initData();
@@ -383,6 +528,15 @@ public class SimpleTableView {
             containerView.removeAllViews();//清空视图
             containerView.addView(tableView);
             return new SimpleTableView(this);
+        }
+
+        /**
+         * 更新表格第一行标题（锁定状态下才需要重新创建）
+         */
+        private void updateFirstRow() {
+            if (isLockFirstRow) {
+                createHeadView();
+            }
         }
 
         /**
@@ -405,7 +559,166 @@ public class SimpleTableView {
          * 初始化表格视图
          */
         private void initView() {
+            //表格左上角视图（第一行第一列交叉的那一格）
+            lockColumnHeadTitle = tableView.findViewById(R.id.tv_lock_column_text);
+            //第一行布局（锁定第一列）
+            lockColumnHeadLl = tableView.findViewById(R.id.ll_lock_column_head);
+            //第一行布局（未锁定第一列）
+            unLockColumnHeadLl = tableView.findViewById(R.id.ll_unlock_column_head);
+            //第一行滚动视图（锁定第一列）
+            lockColumnHeadHsv = tableView.findViewById(R.id.hsv_lock_column_head);
+            //第一行滚动视图（未锁定第一列）
+            unLockColumnHeadHsv = tableView.findViewById(R.id.hsv_unlock_column_head);
+            //表格主视图
+            tableMainRv = tableView.findViewById(R.id.rv_table_main);
 
+            LinearLayoutManager layoutManager = new LinearLayoutManager(context);
+            layoutManager.setOrientation(RecyclerView.VERTICAL);
+            tableMainRv.setLayoutManager(layoutManager);
+
+            tableViewAdapter = new TableViewAdapter(context, tableFirstColumnData, tableRowData, isLockFirstColumn, isLockFirstRow);
+            ParamsBean paramsBean = new ParamsBean();
+            paramsBean.setCellPadding(cellPadding);
+            paramsBean.setColumnMaxWidths(columnMaxWidths);
+            paramsBean.setRowMaxHeights(rowMaxHeights);
+            paramsBean.setTextSize(textSize);
+            paramsBean.setContentTextColor(contentTextColor);
+            paramsBean.setHeadTextColor(headTextColor);
+            paramsBean.setFirstRowBgColor(firstRowBgColor);
+            paramsBean.setItemSelectedStatus(itemSelectedStatus);
+            tableViewAdapter.setParams(paramsBean);
+
+            tableViewAdapter.setHorizontalScrollView(new OnTableViewListener() {
+                @Override
+                public void onTableViewScrollChange(int x, int y) {
+                    changeAllScrollView(x, y);
+                }
+            });
+
+
+            tableViewAdapter.setOnTableViewCreatedListener(new OnTableViewCreatedListener() {
+                @Override
+                public void onTableViewCreatedCompleted(HorizontalScrollView hsv) {
+                    mScrollViews.add(hsv);
+                }
+            });
+
+            tableMainRv.setAdapter(tableViewAdapter);
+
+            lockColumnHeadLl.setBackgroundColor(ContextCompat.getColor(context, firstRowBgColor));
+            unLockColumnHeadLl.setBackgroundColor(ContextCompat.getColor(context, firstRowBgColor));
+            if (isLockFirstRow) {
+                if (isLockFirstColumn) {
+                    lockColumnHeadLl.setVisibility(View.VISIBLE);
+                    unLockColumnHeadLl.setVisibility(View.GONE);
+                } else {
+                    lockColumnHeadLl.setVisibility(View.GONE);
+                    unLockColumnHeadLl.setVisibility(View.VISIBLE);
+                }
+                createHeadView();
+            } else {
+                lockColumnHeadLl.setVisibility(View.GONE);
+                unLockColumnHeadLl.setVisibility(View.GONE);
+            }
+
+            if (onItemClickListener != null) {
+                tableViewAdapter.setOnItemClickListener(onItemClickListener);
+            }
+            if (onItemLongClickListener != null) {
+                tableViewAdapter.setOnItemLongClickListener(onItemLongClickListener);
+            }
+            if (itemSelectedColor != 0) {
+                tableViewAdapter.setItemSelectedColor(itemSelectedColor);
+            } else {
+                tableViewAdapter.setItemSelectedColor(R.color.dash_line_color);
+            }
+
+
+        }
+
+        /**
+         * 创建头部视图
+         */
+        private void createHeadView() {
+            if (isLockFirstColumn) {
+                lockColumnHeadHsv.removeAllViews();
+                lockColumnHeadTitle.setTextColor(ContextCompat.getColor(context, headTextColor));
+                lockColumnHeadTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize);
+                lockColumnHeadTitle.setText(columnTitle);
+                LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) lockColumnHeadTitle.getLayoutParams();
+                layoutParams.width = DisplayUtil.dip2px(context, columnMaxWidths.get(0));
+                layoutParams.height = DisplayUtil.dip2px(context, rowMaxHeights.get(0));
+                layoutParams.setMargins(cellPadding, cellPadding, cellPadding, cellPadding);
+                lockColumnHeadTitle.setLayoutParams(layoutParams);
+                createFirstRow(lockColumnHeadHsv, tableFirstRowData);
+                if (!mScrollViews.contains(lockColumnHeadHsv)) {
+                    mScrollViews.add(lockColumnHeadHsv);
+                }
+                lockColumnHeadHsv.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+                    @Override
+                    public void onScrollChange(View view, int l, int t, int r, int b) {
+                        changeAllScrollView(l, t);
+                    }
+                });
+            } else {
+                unLockColumnHeadHsv.removeAllViews();
+                createFirstRow(unLockColumnHeadHsv, tableFirstRowData);
+                if (!mScrollViews.contains(unLockColumnHeadHsv)) {
+                    mScrollViews.add(unLockColumnHeadHsv);
+                }
+                unLockColumnHeadHsv.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+                    @Override
+                    public void onScrollChange(View view, int l, int t, int r, int b) {
+                        changeAllScrollView(l, t);
+                    }
+                });
+            }
+        }
+
+        /**
+         * 构造可以滚动的表格第一行视图（表格头）
+         *
+         * @param data 第一行的数据
+         */
+        private void createFirstRow(HorizontalScrollView scrollView, List<String> data) {
+            //设置LinearLayout
+            LinearLayout linearLayout = new LinearLayout(context);
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT);
+            linearLayout.setLayoutParams(layoutParams);
+            linearLayout.setGravity(Gravity.CENTER);
+            linearLayout.setOrientation(LinearLayout.HORIZONTAL);
+            for (int i = 0; i < data.size(); i++) {
+                //构造单元格
+                TextView textView = new TextView(context);
+                textView.setTextColor(ContextCompat.getColor(context, headTextColor));
+                textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize);
+                textView.setGravity(Gravity.CENTER);
+                textView.setText(data.get(i));
+                //设置布局
+                LinearLayout.LayoutParams textViewParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT);
+                textViewParams.setMargins(cellPadding, cellPadding, cellPadding, cellPadding);
+                textView.setLayoutParams(textViewParams);
+                ViewGroup.LayoutParams textViewParamsCopy = textView.getLayoutParams();
+                if (isLockFirstColumn) {
+                    textViewParamsCopy.width = DisplayUtil.dip2px(context, columnMaxWidths.get(i + 1));
+                } else {
+                    textViewParamsCopy.width = DisplayUtil.dip2px(context, columnMaxWidths.get(i));
+                }
+                linearLayout.addView(textView);
+                //画分隔线
+                if (i != data.size() - 1) {
+                    View splitView = new View(context);
+                    ViewGroup.LayoutParams splitViewParmas = new ViewGroup.LayoutParams(DisplayUtil.dip2px(context, 1),
+                            ViewGroup.LayoutParams.MATCH_PARENT);
+                    splitView.setLayoutParams(splitViewParmas);
+                    splitView.setBackgroundColor(ContextCompat.getColor(context, R.color.white));
+                    linearLayout.addView(splitView);
+                }
+            }
+
+            scrollView.addView(linearLayout);
         }
 
 
@@ -512,7 +825,7 @@ public class SimpleTableView {
                     int currentHeight;
                     //如果用户指定某列宽度，则按照用户指定宽度算对应列的高度
                     if (changeColumns.size() > 0 && changeColumns.containsKey(j)) {
-                        currentHeight = getTextViewHeight(textView, rowData.get(j), changeColumns.get(j));
+                        currentHeight = measureTextHeight(textView, rowData.get(j), changeColumns.get(j));
                     } else {
                         currentHeight = measureTextHeight(textView, rowData.get(j));
                     }
@@ -630,6 +943,28 @@ public class SimpleTableView {
         }
 
         /**
+         * 计算表格中的一格的高度
+         *
+         * @param textView 表格中的一格
+         * @param text     文字
+         * @param width    指定宽度
+         * @return 表格一格的高度
+         */
+        private int measureTextHeight(TextView textView, String text, int width) {
+            if (textView != null) {
+                int height = getTextViewHeight(textView, text, width);
+                if (height < minRowHeight) {
+                    return minRowHeight;
+                } else if (height > minRowHeight && height < maxRowHeight) {
+                    return height;
+                } else {
+                    return maxRowHeight;
+                }
+            }
+            return 0;
+        }
+
+        /**
          * 根据文字计算表格一格所占的高度
          *
          * @param textView 表格中的一格
@@ -642,8 +977,7 @@ public class SimpleTableView {
                 TextPaint textPaint = textView.getPaint();
                 //StaticLayout 计算自动换行后的行高
                 StaticLayout staticLayout = new StaticLayout(text, textPaint, DisplayUtil.dip2px(context, width), Layout.Alignment.ALIGN_NORMAL, 1, 0, false);
-                int height = DisplayUtil.px2dip(context, staticLayout.getHeight());
-                return height;
+                return DisplayUtil.px2dip(context, staticLayout.getHeight());
             }
             return 0;
         }
@@ -661,8 +995,7 @@ public class SimpleTableView {
                 TextPaint textPaint = textView.getPaint();
                 //StaticLayout 计算自动换行后的行高
                 StaticLayout staticLayout = new StaticLayout(text, textPaint, DisplayUtil.dip2px(context, width), Layout.Alignment.ALIGN_NORMAL, 1, 0, false);
-                int height = DisplayUtil.px2dip(context, staticLayout.getHeight());
-                return height;
+                return DisplayUtil.px2dip(context, staticLayout.getHeight());
             }
             return 0;
         }
@@ -692,12 +1025,31 @@ public class SimpleTableView {
         private void changeColumnWidth(int columnNum, int columnWidth) {
             if (columnMaxWidths != null && columnMaxWidths.size() > 0) {
                 if (columnNum < columnMaxWidths.size() && columnNum >= 0) {
-                    columnMaxWidths.set(columnNum, columnWidth + DisplayUtil.px2dip(context, 15) * 2);
+                    columnMaxWidths.set(columnNum, columnWidth);//加上左右外边距
                 } else {
                     Log.e(TAG, "指定列不存在");
                 }
             }
         }
+
+        /**
+         * 改变所有滚动视图位置
+         *
+         * @param x
+         * @param y
+         */
+        private void changeAllScrollView(int x, int y) {
+            if (mScrollViews.size() > 0) {
+                if (tableViewListener != null) {
+                    tableViewListener.onTableViewScrollChange(x, y);
+                }
+                for (int i = 0; i < mScrollViews.size(); i++) {
+                    HorizontalScrollView scrollView = mScrollViews.get(i);
+                    scrollView.scrollTo(x, y);
+                }
+            }
+        }
+
 
     }
 

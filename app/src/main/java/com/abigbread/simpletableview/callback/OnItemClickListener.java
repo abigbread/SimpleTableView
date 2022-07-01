@@ -1,4 +1,4 @@
-package com.abigbread.simpletableview;
+package com.abigbread.simpletableview.callback;
 
 import android.view.View;
 

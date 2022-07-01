@@ -11,4 +11,7 @@
     <color name="head_bg">#2c8fd3</color>
     <color name="head_text_color">#E5EFFE</color>
     <color name="content_text_color">#817F80</color>
+    <color name="light_gray">#e6e6e6</color>
+    <color name="dash_line_color">#C2C0C2</color>
+    <color name="selected_bg">#C9E8B6</color>
 </resources>
